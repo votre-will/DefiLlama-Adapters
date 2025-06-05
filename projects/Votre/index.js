@@ -37,7 +37,6 @@ async function tvl(_, _1, _2, { api }) {
   ].flatMap(([token, owners]) =>
     owners.map(owner => [token, owner])
   );
-
   return api.sumTokens({ tokensAndOwners });
 }
 
