@@ -105,14 +105,13 @@ async function escrowOffers(_, _1, _2, { api }) {
     field: "escrowOffers",
   });
 
-  let escrowOffersTotal = {};
   for (const offer of allOffers) {
     const asset = offer.escrowSupplierNFT?.asset;
     const available = offer.available;
     if (!asset || !available) continue;
-    escrowOffersTotal[asset] = (BigInt(escrowOffersTotal[asset] || 0n) + BigInt(available)).toString();
+    api.add(asset, available);
   }
-  return escrowOffersTotal;
+  return api.getBalances();
 }
 
 async function providerOffers(_, _1, _2, { api }) {
@@ -132,14 +131,13 @@ async function providerOffers(_, _1, _2, { api }) {
     field: "liquidityOffers",
   });
 
-  let providerOffersTotal = {};
   for (const offer of allOffers) {
     const asset = offer.collarProviderNFT?.cashAsset;
     const available = offer.available;
     if (!asset || !available) continue;
-    providerOffersTotal[asset] = (BigInt(providerOffersTotal[asset] || 0n) + BigInt(available)).toString();
+    api.add(asset, available);
   }
-  return providerOffersTotal;
+  return api.getBalances();
 }
 
 
