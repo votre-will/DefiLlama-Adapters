@@ -87,6 +87,62 @@ async function borrowed(_, _1, _2, { api }) {
   return api.getBalances();
 }
 
+
+async function escrowOffers(_, _1, _2, { api }) {
+  const query = gql`
+    query FindEscrowOffers($skip: Int!) {
+      escrowOffers(first: 1000, skip: $skip, where: {status: Active}) {
+        available
+        escrowSupplierNFT {
+          asset
+        }
+      }
+    }
+  `;
+  const allOffers = await fetchAllSubgraphResults({
+    url: BASE_MAINNET_SUBGRAPH_URL,
+    query,
+    field: "escrowOffers",
+  });
+
+  let escrowOffersTotal = {};
+  for (const offer of allOffers) {
+    const asset = offer.escrowSupplierNFT?.asset;
+    const available = offer.available;
+    if (!asset || !available) continue;
+    escrowOffersTotal[asset] = (BigInt(escrowOffersTotal[asset] || 0n) + BigInt(available)).toString();
+  }
+  return escrowOffersTotal;
+}
+
+async function providerOffers(_, _1, _2, { api }) {
+  const query = gql`
+    query FindOffers($skip: Int!) {
+      liquidityOffers(first: 1000, skip: $skip, where: {status: Active}) {
+        available
+        collarProviderNFT {
+          cashAsset
+        }
+      }
+    }
+  `;
+  const allOffers = await fetchAllSubgraphResults({
+    url: BASE_MAINNET_SUBGRAPH_URL,
+    query,
+    field: "liquidityOffers",
+  });
+
+  let providerOffersTotal = {};
+  for (const offer of allOffers) {
+    const asset = offer.collarProviderNFT?.cashAsset;
+    const available = offer.available;
+    if (!asset || !available) continue;
+    providerOffersTotal[asset] = (BigInt(providerOffersTotal[asset] || 0n) + BigInt(available)).toString();
+  }
+  return providerOffersTotal;
+}
+
+
 module.exports = {
   methodology:
     "TVL includes cbBTC and WETH locked in escrow contracts, and USDC held in both provider and taker contracts. Balances are fetched via on-chain `balanceOf` calls.",
@@ -95,5 +151,7 @@ module.exports = {
   base: {
     tvl,
     borrowed,
+    // escrowOffers, // this is not a valid key to return, but could be useful info 
+    // providerOffers,
   },
 };
