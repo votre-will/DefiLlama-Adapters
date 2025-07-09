@@ -87,6 +87,38 @@ async function borrowed(_, _1, _2, { api }) {
   return api.getBalances();
 }
 
+async function revenue(_, _1, _2, { api }) {
+  const query = gql`
+    query FindFees($skip: Int!) {
+      loans(skip: $skip, first: 1000) {
+        feesPaid
+        interestAccrued
+        loansNFT {
+          underlying
+        }
+      }
+    }
+  `;
+
+  const allLoans = await fetchAllSubgraphResults({
+    url: BASE_MAINNET_SUBGRAPH_URL,
+    query,
+    field: "loans",
+  });
+
+  for (const loan of allLoans) {
+    const underlyingAddress = loan.loansNFT?.underlying;
+    if (!underlyingAddress) continue;
+
+    // Sum both fee fields:
+    const totalRevenue = BigInt(loan.feesPaid) + BigInt(loan.interestAccrued);
+
+    api.add(underlyingAddress, totalRevenue.toString());
+  }
+
+  return api.getBalances();
+}
+
 module.exports = {
   methodology:
     "TVL includes cbBTC and WETH locked in escrow contracts, and USDC held in both provider and taker contracts. Balances are fetched via on-chain `balanceOf` calls.",
@@ -95,5 +127,6 @@ module.exports = {
   base: {
     tvl,
     borrowed,
+    revenue,
   },
 };
